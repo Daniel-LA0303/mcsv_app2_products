@@ -7,10 +7,10 @@
 		<artifactId>mcsv_project2</artifactId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
-	<groupId>com.mcsv.orderservice</groupId>
-	<artifactId>order-service</artifactId>
+	<groupId>com.mcsv.inventory</groupId>
+	<artifactId>inventory-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>order-service</name>
+	<name>inventory-service</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>17</java.version>
@@ -39,10 +39,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 	</dependencies>
 
