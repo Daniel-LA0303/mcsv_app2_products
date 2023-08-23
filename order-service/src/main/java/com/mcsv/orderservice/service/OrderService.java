@@ -25,7 +25,7 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
-    private WebClient webClient;
+    private WebClient.Builder webClientBuilder; //changes here cause we need load balancer, we have mulpiple instances
 
     //this realize the order
     public void placeOrder(OrderRequest orderRequest){
@@ -40,14 +40,14 @@ public class OrderService {
         order.setNumberOrder(UUID.randomUUID().toString()); //this is the order number
         order.setOrderLineItems(orderLineItems);
 
-        //communicate with another service with ractive programming with webflux
+        //communicate with another service with ractive programming with webflux, we need webflux dependency
         List<String> codeSku = order.getOrderLineItems().stream()
                         .map(OrderLineItems::getCodeSku)
                         .collect(Collectors.toList());
 
         System.out.println("codeSku = " + codeSku);
 
-        InventoryResponse [] inventoryResponseArray = webClient.get()
+        InventoryResponse [] inventoryResponseArray = webClientBuilder.build().get()
                 .uri("http://localhost:8082/api/inventory", uriBuilder -> uriBuilder.queryParam("codeSku", codeSku).build())
                         .retrieve()
                         .bodyToMono(InventoryResponse[].class)
