@@ -9,6 +9,8 @@ import com.mcsv.orderservice.model.OrderLineItems;
 import com.mcsv.orderservice.repository.OrderRepository;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,6 +29,9 @@ public class OrderService {
 
     @Autowired
     private WebClient.Builder webClientBuilder; //changes here cause we need load balancer, we have mulpiple instances
+
+    @Autowired
+    private Tracer tracer;
 
     //this realize the order
     //@Transactional(readOnly = true)
@@ -49,20 +54,32 @@ public class OrderService {
 
         System.out.println("codeSku = " + codeSku);
 
-        InventoryResponse [] inventoryResponseArray = webClientBuilder.build().get()
-                .uri("http://localhost:8082/api/inventory", uriBuilder -> uriBuilder.queryParam("codeSku", codeSku).build())
-                        .retrieve()
-                        .bodyToMono(InventoryResponse[].class)
-                        .block();
+        //here we config zipkin
+        Span inventoryServiceLookup = tracer.nextSpan().name("InventoryServiceLookup");
 
-        boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
-                .allMatch(InventoryResponse::isInStock);
-        if(allProductsInStock){
-            orderRepository.save(order);
-            return "Order placed successfully";
-        }else {
-            throw new IllegalArgumentException("Some products are not in stock");
+        try(Tracer.SpanInScope isLookup = tracer.withSpan(inventoryServiceLookup.start())){
+            inventoryServiceLookup.tag("call", "inventory-service");
+
+            InventoryResponse [] inventoryResponseArray = webClientBuilder.build().get()
+                    .uri("http://localhost:8082/api/inventory", uriBuilder -> uriBuilder.queryParam("codeSku", codeSku).build())
+                    .retrieve()
+                    .bodyToMono(InventoryResponse[].class)
+                    .block();
+
+            boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
+                    .allMatch(InventoryResponse::isInStock);
+            if(allProductsInStock){
+                orderRepository.save(order);
+                return "Order placed successfully";
+            }else {
+                throw new IllegalArgumentException("Some products are not in stock");
+            }
+
+        }finally {
+            inventoryServiceLookup.end();
         }
+
+
 
         //orderRepository.save(order);
 
