@@ -4,6 +4,7 @@ package com.mcsv.orderservice.service;
 import com.mcsv.orderservice.dto.InventoryResponse;
 import com.mcsv.orderservice.dto.OrderLineItemsDto;
 import com.mcsv.orderservice.dto.OrderRequest;
+import com.mcsv.orderservice.event.OrderPlacedEvent;
 import com.mcsv.orderservice.model.Order;
 import com.mcsv.orderservice.model.OrderLineItems;
 import com.mcsv.orderservice.repository.OrderRepository;
@@ -11,6 +12,7 @@ import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -23,6 +25,9 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class OrderService {
+
+    @Autowired
+    private KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -70,6 +75,8 @@ public class OrderService {
                     .allMatch(InventoryResponse::isInStock);
             if(allProductsInStock){
                 orderRepository.save(order);
+                //message with kafka
+                kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getNumberOrder()));
                 return "Order placed successfully";
             }else {
                 throw new IllegalArgumentException("Some products are not in stock");
