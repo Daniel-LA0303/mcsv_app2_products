@@ -7,6 +7,7 @@ import com.mcsv.orderservice.dto.OrderRequest;
 import com.mcsv.orderservice.model.Order;
 import com.mcsv.orderservice.model.OrderLineItems;
 import com.mcsv.orderservice.repository.OrderRepository;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,8 @@ public class OrderService {
     private WebClient.Builder webClientBuilder; //changes here cause we need load balancer, we have mulpiple instances
 
     //this realize the order
-    public void placeOrder(OrderRequest orderRequest){
+    //@Transactional(readOnly = true)
+    public String placeOrder(OrderRequest orderRequest){
         Order order = new Order();
 
 
@@ -57,11 +59,12 @@ public class OrderService {
                 .allMatch(InventoryResponse::isInStock);
         if(allProductsInStock){
             orderRepository.save(order);
+            return "Order placed successfully";
         }else {
             throw new IllegalArgumentException("Some products are not in stock");
         }
 
-        orderRepository.save(order);
+        //orderRepository.save(order);
 
     }
 
