@@ -1,6 +1,7 @@
 package com.mcsv.orderservice.service;
 
 
+import com.mcsv.orderservice.config.rabitmq.Producer;
 import com.mcsv.orderservice.dto.InventoryResponse;
 import com.mcsv.orderservice.dto.OrderLineItemsDto;
 import com.mcsv.orderservice.dto.OrderRequest;
@@ -9,6 +10,7 @@ import com.mcsv.orderservice.model.Order;
 import com.mcsv.orderservice.model.OrderLineItems;
 import com.mcsv.orderservice.repository.OrderRepository;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class OrderService {
@@ -37,6 +40,9 @@ public class OrderService {
 
     @Autowired
     private Tracer tracer;
+
+    @Autowired
+    private Producer producer;
 
     //this realize the order
     //@Transactional(readOnly = true)
@@ -77,6 +83,9 @@ public class OrderService {
                 orderRepository.save(order);
                 //message with kafka
                 kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getNumberOrder()));
+
+                //message with rabbitmq
+                sendMessageRabbitMQ("Notification sending");
                 return "Order placed successfully";
             }else {
                 throw new IllegalArgumentException("Some products are not in stock");
@@ -98,6 +107,12 @@ public class OrderService {
         orderLineItems.setPrice(orderLineItemsDto.getPrice());
         orderLineItems.setQuantity(orderLineItemsDto.getQuantity());
         return orderLineItems;
+    }
+
+    //rabbitmq
+    private void sendMessageRabbitMQ(String message) {
+        log.info("Sending message to RabbitMQ: {}", message);
+        producer.send(message);
     }
 }
 

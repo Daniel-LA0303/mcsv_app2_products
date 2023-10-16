@@ -1,6 +1,5 @@
 version: '3.7'
 services:
-  #this is the config to run the images with docker compose
   keycloak-mysql:
     container_name: keycloak-mysql
     image: mysql:8.0.31
@@ -28,8 +27,6 @@ services:
       - "8080:8080"
     volumes:
       - ./realms/:/opt/keycloak/data/import/
-    depends_on:
-      - keycloak-mysql
 
   zipkin:
     image: openzipkin/zipkin
@@ -37,6 +34,28 @@ services:
     ports:
       - "9411:9411"
 
+  prometheus:
+    image: prom/prometheus:v2.37.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
@@ -60,3 +79,14 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_VHOST: /

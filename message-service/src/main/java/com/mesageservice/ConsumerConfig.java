@@ -1,4 +1,4 @@
-package com.mcsv.orderservice.config.rabitmq;
+package com.mesageservice;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.beans.factory.annotation.Value;
@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ProducerConfig {
+public class ConsumerConfig {
 
     @Value("${msvc.queue.name}")
     private String queueName;
