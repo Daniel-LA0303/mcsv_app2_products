@@ -36,7 +36,7 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
-    private WebClient.Builder webClientBuilder; //changes here cause we need load balancer, we have mulpiple instances
+    private WebClient.Builder webClientBuilder; //To communicate with another service
 
     @Autowired
     private Tracer tracer;
@@ -50,15 +50,18 @@ public class OrderService {
         Order order = new Order();
 
 
-        //elements of order
+        //fist we pass the orderRequest to orderLineItemsDtoList, then we map to orderLineItems
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtoList()
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
-        order.setNumberOrder(UUID.randomUUID().toString()); //this is the order number
+
+        //we add a id random to the order
+        order.setNumberOrder(UUID.randomUUID().toString());
+        //we add the orderLineItems to the order
         order.setOrderLineItems(orderLineItems);
 
-        //communicate with another service with ractive programming with webflux, we need webflux dependency
+        //we get the codeSku from the orderLineItems, can be more than one
         List<String> codeSku = order.getOrderLineItems().stream()
                         .map(OrderLineItems::getCodeSku)
                         .collect(Collectors.toList());
@@ -101,6 +104,7 @@ public class OrderService {
 
     }
 
+    //pass info from orderLineItemsDto to orderLineItems
     private OrderLineItems mapToDto(OrderLineItemsDto orderLineItemsDto){
         OrderLineItems orderLineItems = new OrderLineItems();
         orderLineItems.setCodeSku(orderLineItemsDto.getCodeSku());
