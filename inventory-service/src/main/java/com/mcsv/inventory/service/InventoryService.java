@@ -15,6 +15,7 @@ public class InventoryService {
     @Autowired
     private InventoryRepository inventoryRepository;
 
+    //this method receive a list of codeSku and return a list of InventoryResponse
     @Transactional(readOnly = true)
     public List<InventoryResponse> inInStock(List<String> codeSku) {
         return inventoryRepository.findByCodeSkuIn(codeSku).stream()

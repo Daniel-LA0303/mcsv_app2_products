@@ -22,6 +22,7 @@ public class SecurityConfig {
                                 .anyExchange()
                                 .authenticated()
                 )
+                //we need to configure the oauth2 resource server
                 .oauth2ResourceServer(ServerHttpSecurity.OAuth2ResourceServerSpec::jwt);
         return serverHttpSecurity.build();
     }

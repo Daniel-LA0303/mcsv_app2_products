@@ -74,14 +74,19 @@ public class OrderService {
         try(Tracer.SpanInScope isLookup = tracer.withSpan(inventoryServiceLookup.start())){
             inventoryServiceLookup.tag("call", "inventory-service");
 
+            //here we comunicate with inventory-service
             InventoryResponse [] inventoryResponseArray = webClientBuilder.build().get()
-                    .uri("http://localhost:8082/api/inventory", uriBuilder -> uriBuilder.queryParam("codeSku", codeSku).build())
+                    //we pass codeSku ass param
+                    .uri("http://inventory-service/api/inventory", uriBuilder -> uriBuilder.queryParam("codeSku", codeSku).build())
                     .retrieve()
-                    .bodyToMono(InventoryResponse[].class)
+                    .bodyToMono(InventoryResponse[].class) //we receved the response of type InventoryResponse (DTO)
                     .block();
 
+            //we ckeck if the products are in stock
             boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
                     .allMatch(InventoryResponse::isInStock);
+
+            //if products are in stock then save the order
             if(allProductsInStock){
                 orderRepository.save(order);
                 //message with kafka

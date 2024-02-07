@@ -11,7 +11,7 @@ public class WebClientConfig {
     //config to comunicate with inventory-service we need webflux in pom file
     @Bean
     @LoadBalanced //its a charge balancer to comunicate with other services
-    public WebClient webClient() {
-        return WebClient.builder().build();
+    public WebClient.Builder webClient() {
+        return WebClient.builder();
     }
 }
